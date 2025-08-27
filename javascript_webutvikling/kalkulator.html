@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator</title>
+
+<style> 
+
+body { font-family: system-ui; display: grid; place-items: center; min-height: 100vh;}
+.calc {width: 320px; border: 1px solid #ddd;; border-radius: 12px; overflow: hidden;}
+.display { padding: 16px; background: #111; color: #fff; text-align: right; font-size: 28px;}
+.pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px;}
+button {padding: 14px; font-size: 18px ; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; }
+.op {color: #0ea5e9; font-weight: 700;}
+.wide {grid-column: span 2; }
+</style>
+</head>
+<body>
+
+<div class="calc"
+<div id="display" class="display>">0</div>
+<div class="pad">
+    <button data-action="clear">C</button>
+    <button data-action="del">Backspace</button>
+    <button data-action=".">.</button>
+    <button data-action="op" data-op="/">/</button>
+
+    <button data-num="7">7</button>
+    <button data-num="8">8</button>
+      <button data-num="9">9</button>
+      <button class="op" data-op="*">×</button>
+
+      <button data-num="4">4</button>
+      <button data-num="5">5</button>
+      <button data-num="6">6</button>
+      <button class="op" data-op="-">−</button>
+
+      <button data-num="1">1</button>
+      <button data-num="2">2</button>
+      <button data-num="3">3</button>
+      <button class="op" data-op="+">+</button>
+
+      <button calss="wide" data-num="0">0</button>
+      <button class="wide" data-action="equals">=</button>
+      </div>
+    </div>
+
+<script> 
+
+
+
+
+    
+</script>
+    
+
+
+
+
+
+
+</body>
+</html>
