@@ -1,0 +1,230 @@
+# 📦 Prosjekt: Nordic Performance Coaching
+
+**Stack:** A) Ren HTML5 + CSS + JavaScript (ingen byggesteg)
+
+## 🌲 Mappestruktur
+
+```
+NordicPerformance/
+├─ index.html
+├─ om-oss.html
+├─ tjenester.html
+├─ blogg.html
+├─ kontakt.html
+├─ 404.html
+├─ offline.html
+├─ styles/
+│  └─ styles.css
+├─ scripts/
+│  ├─ main.js
+│  ├─ blog.js
+│  └─ form.js
+├─ assets/
+│  ├─ logo.svg
+│  ├─ hero.jpg            (ekstern lenke brukt i HTML)
+│  ├─ gallery1.jpg        (ekstern lenke brukt i HTML)
+│  ├─ gallery2.jpg        (ekstern lenke brukt i HTML)
+│  ├─ gallery3.jpg        (ekstern lenke brukt i HTML)
+│  ├─ coach.jpg           (ekstern lenke brukt i HTML)
+│  └─ icons/
+│     ├─ icon-192.png     (placeholder-URL i manifest)
+│     └─ icon-512.png     (placeholder-URL i manifest)
+├─ sitemap.xml
+├─ robots.txt
+├─ manifest.webmanifest
+├─ sw.js
+└─ README.md
+```
+
+> **Merk:** Bildene refererer til høykvalitets plassholdere fra Unsplash/placeholder.com direkte i HTML. Du kan bytte til lokale filer senere.
+
+---
+
+## 🏠 `index.html`
+
+```html
+<!doctype html>
+<html lang="no" class="no-js" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nordic Performance Coaching – Bygg muskler, løp raskere, lev bedre</title>
+  <meta name="description" content="Personlig trening og online coaching i Oslo for deg som vil bygge muskler, forbedre kondisjon og få varige resultater – uten bro-science." />
+  <link rel="preload" href="/styles/styles.css" as="style" />
+  <link rel="stylesheet" href="/styles/styles.css" />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta property="og:title" content="Nordic Performance Coaching" />
+  <meta property="og:description" content="Personlig trening og online coaching i Oslo." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nordicperformance.no/" />
+  <meta property="og:image" content="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1200" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script>
+    document.documentElement.classList.remove('no-js');
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Nordic Performance Coaching",
+    "url": "https://nordicperformance.no/",
+    "logo": "https://nordicperformance.no/assets/logo.svg",
+    "sameAs": ["https://www.instagram.com/", "https://www.facebook.com/"]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "url": "https://nordicperformance.no/",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://nordicperformance.no/blogg.html?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Hopp til innhold</a>
+  <header class="site-header" role="banner">
+    <div class="container nav-wrap">
+      <a href="/" class="brand" aria-label="Hjem">
+        <img src="/assets/logo.svg" alt="Nordic Performance Coaching" width="36" height="36" />
+        <span>Nordic Performance</span>
+      </a>
+      <button class="theme-toggle" id="themeToggle" aria-pressed="false" aria-label="Bytt tema">🌓</button>
+      <nav aria-label="Hovedmeny">
+        <ul class="nav" id="nav">
+          <li><a href="/index.html" data-nav>Hjem</a></li>
+          <li><a href="/tjenester.html" data-nav>Tjenester</a></li>
+          <li><a href="/om-oss.html" data-nav>Om oss</a></li>
+          <li><a href="/blogg.html" data-nav>Blogg</a></li>
+          <li><a href="/kontakt.html" class="btn" data-nav>Kontakt</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section class="hero" style="--bg:url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1600&auto=format&fit=crop&q=60')">
+      <div class="container">
+        <h1>Bygg muskler. Løp raskere. Lev bedre.</h1>
+        <p>Personlig treningsopplegg og oppfølging i Oslo – støttet av data, erfaring og god oppfølging. Ingen magiske snarveier, bare smart trening.</p>
+        <div class="actions">
+          <a class="btn" href="/kontakt.html">Bestill gratis konsultasjon</a>
+          <a class="btn btn-secondary" href="/tjenester.html">Se pakker</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="features container" aria-labelledby="features-title">
+      <h2 id="features-title">Hvorfor velge oss</h2>
+      <ul class="grid-3">
+        <li>
+          <h3>Skreddersydd plan</h3>
+          <p>Program basert på din treningshistorikk, utstyr og hverdag. Justeres ukentlig etter progresjon.</p>
+        </li>
+        <li>
+          <h3>Progresjon & data</h3>
+          <p>Enkel logging av økter og nøkkeltall (RPE, søvn, steg) – vi bruker data til å styre belastning.</p>
+        </li>
+        <li>
+          <h3>Ansvarlighet</h3>
+          <p>Fast check-in, chat-støtte og tydelige milepæler. Du står ikke alene mellom øktene.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="gallery container" aria-labelledby="galleri-title">
+      <h2 id="galleri-title">Resultater & miljø</h2>
+      <div class="grid-3 thumbs">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1546483875-ad9014c88eba?w=600" srcset="https://images.unsplash.com/photo-1546483875-ad9014c88eba?w=400 400w, https://images.unsplash.com/photo-1546483875-ad9014c88eba?w=800 800w" sizes="(max-width: 800px) 100vw, 33vw" alt="Kunde trener markløft i studio" />
+        <img loading="lazy" src="https://images.unsplash.com/photo-1558611848-73f7eb4001a1?w=600" srcset="https://images.unsplash.com/photo-1558611848-73f7eb4001a1?w=400 400w, https://images.unsplash.com/photo-1558611848-73f7eb4001a1?w=800 800w" sizes="(max-width: 800px) 100vw, 33vw" alt="Coach viser teknikk på knebøy" />
+        <img loading="lazy" src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600" srcset="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400 400w, https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800 800w" sizes="(max-width: 800px) 100vw, 33vw" alt="Løper på bane under kveldssol" />
+      </div>
+    </section>
+
+    <section class="testimonials container" aria-labelledby="sitater-title">
+      <h2 id="sitater-title">Hva sier kundene</h2>
+      <blockquote>
+        <p>«På 12 uker gikk jeg fra 5 til 10 pullups og satte pers i 5 km. Oppfølgingen er gull.»</p>
+        <footer>— Marius, 20, Oslo</footer>
+      </blockquote>
+      <blockquote>
+        <p>«Strukturerte økter, null synsing. Kroppen føles sterkere, og kneet mitt spiller endelig på lag.»</p>
+        <footer>— Amalie, 24, Bærum</footer>
+      </blockquote>
+    </section>
+
+    <section class="faq container" aria-labelledby="faq-title">
+      <h2 id="faq-title">Ofte stilte spørsmål</h2>
+      <div class="accordion" id="faq">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="faq1" id="btn-faq1">Hva får jeg i en gratis konsultasjon?</button>
+        <div id="faq1" role="region" aria-labelledby="btn-faq1" hidden>
+          <p>Vi kartlegger mål, treningserfaring, eventuelle skader og hverdag. Du får konkrete forslag til veien videre.</p>
+        </div>
+        <button class="accordion-btn" aria-expanded="false" aria-controls="faq2" id="btn-faq2">Må jeg ha tilgang til gym?</button>
+        <div id="faq2" role="region" aria-labelledby="btn-faq2" hidden>
+          <p>Nei. Vi kan programmere både for hjemmetrening og gym – eller en kombinasjon.</p>
+        </div>
+        <button class="accordion-btn" aria-expanded="false" aria-controls="faq3" id="btn-faq3">Hvordan følger dere opp skader?</button>
+        <div id="faq3" role="region" aria-labelledby="btn-faq3" hidden>
+          <p>Vi tilpasser mengde/intensitet og fokuserer på smertefrie bevegelser. Ved behov samarbeider vi med fysioterapeut.</p>
+        </div>
+        <button class="accordion-btn" aria-expanded="false" aria-controls="faq4" id="btn-faq4">Hva koster det?</button>
+        <div id="faq4" role="region" aria-labelledby="btn-faq4" hidden>
+          <p>Se <a href="/tjenester.html">tjenester og priser</a>. Vi tilbyr pakker for ulike behov og budsjett.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta container">
+      <h2>Klar for å komme i gang?</h2>
+      <p>Book en uforpliktende prat. Vi tar resten derfra.</p>
+      <a class="btn" href="/kontakt.html">Book nå</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <img src="/assets/logo.svg" alt="Nordic Performance" width="36" height="36" />
+        <p>Treningscoaching i Oslo og online. Mandag–fredag 08–18.</p>
+      </div>
+      <nav aria-label="Bunnmeny">
+        <ul>
+          <li><a href="/om-oss.html">Om oss</a></li>
+          <li><a href="/tjenester.html">Tjenester</a></li>
+          <li><a href="/blogg.html">Blogg</a></li>
+          <li><a href="/kontakt.html">Kontakt</a></li>
+        </ul>
+      </nav>
+      <div>
+        <p><small>© <span id="year"></span> Nordic Performance Coaching</small></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/scripts/main.js" type="module" defer></script>
+</body>
+</html>
+```
+
+---
+
+## 👤 `om-oss.html`
+
+```html
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Om oss – Nordic Performance Coaching</title>
+  <meta name="description" content="Bli kjent med coachene, metodikken og verdiene bak Nordic Performance Coaching." />
+  <link rel="stylesheet" href="/styles/styles.css" />
+  <link rel="icon" href="/assets/logo.svg"
+```
