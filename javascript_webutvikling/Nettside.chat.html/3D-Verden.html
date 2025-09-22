@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI-generert 3D-verden – HTML + JS (Three.js)</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #030611; color: #eaeaea; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; }
+    #app { position: fixed; inset: 0; overflow: hidden; }
+    canvas { display: block; }
+    .panel { position: absolute; top: 16px; left: 16px; width: 320px; z-index: 10; background: rgba(255,255,255,0.08); backdrop-filter: blur(8px); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); padding: 14px; }
+    .row { display: grid; grid-template-columns: 1fr 80px; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; }
+    .row input[type="range"] { grid-column: span 2; width: 100%; }
+    .row small { opacity: .8; text-align: right; }
+    .title { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+    .title h2 { margin:0; font-size: 16px; }
+    .title button { font-size: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #eaeaea; padding: 4px 8px; border-radius: 8px; cursor: pointer; }
+    .foot { position:absolute; right: 16px; bottom: 12px; background: rgba(0,0,0,0.45); font-size: 12px; padding: 6px 10px; border-radius: 999px; }
+    .toggles { display:grid; grid-template-columns: auto 1fr; gap: 8px; align-items:center; font-size: 12px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<div class="panel" id="panel">
+  <div class="title">
+    <h2>AI-generert verden</h2>
+    <button id="toggle">Skjul</button>
+  </div>
+  <div id="panel-body">
+    <div class="row"><label>Seed</label><small id="seedVal">1337</small><input id="seed" type="range" min="1" max="9999" value="1337"/></div>
+    <div class="row"><label>Vannstand</label><small id="waterVal">1.00</small><input id="water" type="range" min="0.90" max="1.10" step="0.001" value="1.00"/></div>
+    <div class="row"><label>Amplitude</label><small id="ampVal">0.20</small><input id="amp" type="range" min="0.00" max="0.50" step="0.001" value="0.20"/></div>
+    <div class="row"><label>Støyskala</label><small id="scaleVal">1.20</small><input id="scale" type="range" min="0.20" max="5.00" step="0.01" value="1.20"/></div>
+    <div class="row"><label>Lacunarity</label><small id="lacVal">2.20</small><input id="lac" type="range" min="1.50" max="3.50" step="0.01" value="2.20"/></div>
+    <div class="row"><label>Gain</label><small id="gainVal">0.55</small><input id="gain" type="range" min="0.30" max="0.80" step="0.01" value="0.55"/></div>
+    <div class="row"><label>Octaves</label><small id="octVal">6</small><input id="oct" type="range" min="1" max="8" step="1" value="6"/></div>
+    <div class="row"><label>Sky-tetthet</label><small id="cloudDenVal">0.62</small><input id="cloudDen" type="range" min="0.20" max="0.90" step="0.01" value="0.62"/></div>
+    <div class="row"><label>Sky-hastighet</label><small id="cloudSpdVal">0.10</small><input id="cloudSpd" type="range" min="0.00" max="0.50" step="0.001" value="0.10"/></div>
+    <div class="row"><label>Dag/natt-hastighet</label><small id="sunSpdVal">0.05</small><input id="sunSpd" type="range" min="0.00" max="0.20" step="0.001" value="0.05"/></div>
+    <div class="row"><label>Byer (antall)</label><small id="citiesVal">200</small><input id="cities" type="range" min="0" max="1000" step="10" value="200"/></div>
+    <div class="toggles"><input id="showClouds" type="checkbox" checked><label for="showClouds">Skyrender</label></div>
+    <div class="toggles"><input id="showAtmo" type="checkbox" checked><label for="showAtmo">Atmosfære</label></div>
+  </div>
+</div>
+<div class="foot">Dra for å rotere • Scroll for zoom • Juster parametere i panelet</div>
+
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+// ---------- Utils: seeded RNG & Perlin noise (CPU) ----------
+function mulberry32(a){ return function(){ let t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
+function makePerm(seed){ const rand = mulberry32(seed|0 || 1); const p = new Uint8Array(512); const perm = new Uint8Array(256); for(let i=0;i<256;i++) perm[i]=i; for(let i=255;i>0;i--){ const j = Math.floor(rand()* (i+1)); const t = perm[i]; perm[i]=perm[j]; perm[j]=t; } for(let i=0;i<512;i++) p[i]=perm[i&255]; return p; }
+class Perlin3 { constructor(seed){ this.p = makePerm(seed); }
+  fade(t){ return t*t*t*(t*(t*6-15)+10); } lerp(t,a,b){ return a + t*(b-a); }
+  grad(h, x,y,z){ const u = (h&1)?x:-x; const v = (h&2)?y:-y; const w = (h&4)?z:-z; return u+v+w; }
+  noise(x,y,z){ const X=Math.floor(x)&255, Y=Math.floor(y)&255, Z=Math.floor(z)&255; x-=Math.floor(x); y-=Math.floor(y); z-=Math.floor(z); const u=this.fade(x), v=this.fade(y), w=this.fade(z); const p=this.p;
+    const A=p[X]+Y, AA=p[A]+Z, AB=p[A+1]+Z, B=p[X+1]+Y, BA=p[B]+Z, BB=p[B+1]+Z;
+    const g1=this.grad(p[AA], x, y, z), g2=this.grad(p[BA], x-1, y, z), g3=this.grad(p[AB], x, y-1, z), g4=this.grad(p[BB], x-1, y-1, z);
+    const g5=this.grad(p[AA+1], x, y, z-1), g6=this.grad(p[BA+1], x-1, y, z-1), g7=this.grad(p[AB+1], x, y-1, z-1), g8=this.grad(p[BB+1], x-1, y-1, z-1);
+    const x1=this.lerp(u,g1,g2), x2=this.lerp(u,g3,g4), y1=this.lerp(v,x1,x2); const x3=this.lerp(u,g5,g6), x4=this.lerp(u,g7,g8), y2=this.lerp(v,x3,x4); return this.lerp(w,y1,y2); }
+}
+
+// fBm helper (CPU)
+function fbmNoise3(perlin, x,y,z, lac, gain, oct){ let sum=0, amp=0.5, freq=1; for(let i=0;i<oct;i++){ sum += amp * perlin.noise(x*freq, y*freq, z*freq); freq*=lac; amp*=gain; } return sum; }
+
+// ---------- Shaders (GPU) ----------
+const glslNoise = /* glsl */ `
+vec3 mod289(vec3 x){return x - floor(x * (1.0/289.0)) * 289.0;}
+vec4 mod289(vec4 x){return x - floor(x * (1.0/289.0)) * 289.0;}
+vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);} 
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
+float snoise(vec3 v){
+  const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
+  const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
+  vec3 i  = floor(v + dot(v, C.yyy) );
+  vec3 x0 = v - i + dot(i, C.xxx) ;
+  vec3 g = step(x0.yzx, x0.xyz);
+  vec3 l = 1.0 - g;
+  vec3 i1 = min( g.xyz, l.zxy );
+  vec3 i2 = max( g.xyz, l.zxy );
+  vec3 x1 = x0 - i1 + 1.0 * C.xxx;
+  vec3 x2 = x0 - i2 + 2.0 * C.xxx;
+  vec3 x3 = x0 - 1.0 + 3.0 * C.xxx;
+  i = mod289(i);
+  vec4 p = permute( permute( permute(
+              i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
+            + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
+            + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+  float n_ = 1.0/7.0; 
+  vec3  ns = n_ * D.wyz - D.xzx;
+  vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+  vec4 x_ = floor(j * ns.z);
+  vec4 y_ = floor(j - 7.0 * x_ );
+  vec4 x = x_ *ns.x + ns.yyyy;
+  vec4 y = y_ *ns.x + ns.yyyy;
+  vec4 h = 1.0 - abs(x) - abs(y);
+  vec4 b0 = vec4( x.xy, y.xy );
+  vec4 b1 = vec4( x.zw, y.zw );
+  vec4 s0 = floor(b0)*2.0 + 1.0;
+  vec4 s1 = floor(b1)*2.0 + 1.0;
+  vec4 sh = -step(h, vec4(0.0));
+  vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
+  vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+  vec3 p0 = vec3(a0.xy,h.x);
+  vec3 p1 = vec3(a0.zw,h.y);
+  vec3 p2 = vec3(a1.xy,h.z);
+  vec3 p3 = vec3(a1.zw,h.w);
+  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+  p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+  vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+  m = m * m;
+  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+}
+float fbm(vec3 p, float lacunarity, float gain, int octaves){
+  float sum = 0.0; float amp = 0.5; float freq = 1.0;
+  for(int i=0;i<16;i++){ if(i>=octaves) break; sum += amp * snoise(p * freq); freq *= lacunarity; amp *= gain; }
+  return sum;
+}`;
+
+const planetVertex = /* glsl */ `
+uniform float uTime, uAmplitude, uNoiseScale, uWaterLevel, uSeed, uLacunarity, uGain; uniform int uOctaves; varying float vElevation; varying vec3 vWorldPos; 
+${glslNoise}
+float hash11(float p){ p = fract(p*0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
+void main(){
+  vec3 nrm = normalize(position);
+  float s = hash11(uSeed);
+  vec3 p = nrm * uNoiseScale + vec3(s*10.0, s*20.0, s*30.0);
+  float n = fbm(p + uTime*0.02, uLacunarity, uGain, uOctaves);
+  float ridges = pow(max(1.0 - abs(n), 0.0), 1.5);
+  float height = n*0.6 + ridges*0.4;
+  float elev = 1.0 + uAmplitude * height;
+  vElevation = elev; vec3 displaced = nrm * elev;
+  vec4 modelPosition = modelMatrix * vec4(displaced, 1.0);
+  vWorldPos = modelPosition.xyz; gl_Position = projectionMatrix * viewMatrix * modelPosition; }
+`;
+
+const planetFragment = /* glsl */ `
+precision highp float; uniform float uWaterLevel; uniform vec3 uDeepWaterColor, uShallowWaterColor, uBeachColor, uGrassColor, uRockColor, uSnowColor; uniform vec3 uLightDir; uniform float uAmbient; varying float vElevation; varying vec3 vWorldPos; 
+float lambert(vec3 n, vec3 l){ return max(dot(normalize(n), normalize(l)), 0.0); }
+void main(){
+  vec3 n = normalize(vWorldPos);
+  float h = vElevation - 1.0;
+  vec3 col;
+  if(vElevation < uWaterLevel){
+    float depth = clamp((uWaterLevel - vElevation) * 15.0, 0.0, 1.0);
+    float f = pow(1.0 - max(dot(n, normalize(-vWorldPos)), 0.0), 3.0);
+    col = mix(uShallowWaterColor, uDeepWaterColor, depth); col += f * 0.2;
+  } else {
+    float t = smoothstep(0.0, 0.25, h);
+    float t2 = smoothstep(0.25, 0.6, h);
+    float t3 = smoothstep(0.6, 0.9, h);
+    vec3 low = mix(uBeachColor, uGrassColor, t);
+    vec3 mid = mix(uGrassColor, uRockColor, t2);
+    vec3 high = mix(uRockColor, uSnowColor, t3);
+    col = mix(low, mid, t);
+    col = mix(col, high, t2);
+  }
+  float diff = lambert(n, uLightDir);
+  vec3 light = col * (uAmbient + diff * (1.0 - uAmbient));
+  gl_FragColor = vec4(light, 1.0);
+}
+`;
+
+const cloudsVertex = /* glsl */ `
+uniform float uTime, uCloudScale, uSeed; varying vec3 vPos; ${glslNoise}
+void main(){ vPos = normalize(position); gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0); }
+`;
+const cloudsFragment = /* glsl */ `
+precision highp float; uniform float uTime, uCloudScale, uCloudDensity, uCloudSpeed, uSeed; varying vec3 vPos; ${glslNoise}
+float hash11(float p){ p=fract(p*0.1031); p*=p+33.33; p*=p+p; return fract(p); }
+void main(){
+  float s = hash11(uSeed);
+  vec3 q = vPos * uCloudScale + vec3(s*5.0, s*9.0, s*13.0) + uTime * uCloudSpeed * vec3(0.2,0.1,-0.15);
+  float n = fbm(q, 2.0, 0.5, 5);
+  float a = smoothstep(uCloudDensity, 1.0, n);
+  gl_FragColor = vec4(vec3(1.0), a*0.6);
+}
+`;
+
+const atmoVertex = /* glsl */ `varying vec3 vPos; void main(){ vPos=normalize(position); gl_Position = projectionMatrix*viewMatrix*modelMatrix*vec4(position,1.0);} `;
+const atmoFragment = /* glsl */ `precision highp float; uniform vec3 uColor; uniform float uIntensity; varying vec3 vPos; void main(){ float fres = pow(1.0 - max(dot(vPos, vec3(0.0,0.0,1.0)), 0.0), 3.0); gl_FragColor = vec4(uColor, fres * uIntensity); }`;
+
+// ---------- Scene setup ----------
+const app = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+app.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(0, 1.8, 3.2);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enablePan = false; controls.minDistance = 1.6; controls.maxDistance = 6;
+
+// Stars background
+function makeStars(count=5000, radius=100){
+  const geo = new THREE.BufferGeometry();
+  const positions = new Float32Array(count*3);
+  for(let i=0;i<count;i++){
+    const u = Math.random(); const v = Math.random();
+    const theta = 2*Math.PI*u; const phi = Math.acos(2*v-1);
+    const r = radius*(0.9+0.2*Math.random());
+    positions[i*3+0] = r*Math.sin(phi)*Math.cos(theta);
+    positions[i*3+1] = r*Math.cos(phi);
+    positions[i*3+2] = r*Math.sin(phi)*Math.sin(theta);
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+  const mat = new THREE.PointsMaterial({ size: 0.5, sizeAttenuation:true, transparent:true, opacity:0.9 });
+  const points = new THREE.Points(geo, mat); scene.add(points);
+}
+makeStars();
+
+// Sun & light (rotates for day/night)
+const dirLight = new THREE.DirectionalLight(0xffffff, 2.0); scene.add(dirLight);
+const sun = new THREE.Mesh(new THREE.SphereGeometry(0.15,16,16), new THREE.MeshBasicMaterial({ color:0xfff2a8 })); scene.add(sun);
+
+// Parameters
+const params = { seed:1337, noiseScale:1.2, amplitude:0.2, waterLevel:1.0, lacunarity:2.2, gain:0.55, octaves:6, cloudDensity:0.62, cloudSpeed:0.10, sunSpeed:0.05, cities:200, showClouds:true, showAtmosphere:true };
+
+// Planet
+const planetUniforms = {
+  uTime:{ value:0 }, uAmplitude:{ value:params.amplitude }, uNoiseScale:{ value:params.noiseScale }, uWaterLevel:{ value:params.waterLevel },
+  uSeed:{ value:params.seed }, uLacunarity:{ value:params.lacunarity }, uGain:{ value:params.gain }, uOctaves:{ value:params.octaves },
+  uDeepWaterColor:{ value:new THREE.Color('#0a2342') }, uShallowWaterColor:{ value:new THREE.Color('#1e81b0') }, uBeachColor:{ value:new THREE.Color('#e9d8a6') },
+  uGrassColor:{ value:new THREE.Color('#2a9d8f') }, uRockColor:{ value:new THREE.Color('#6c757d') }, uSnowColor:{ value:new THREE.Color('#ffffff') },
+  uLightDir:{ value:new THREE.Vector3(1,1,0).normalize() }, uAmbient:{ value:0.35 }
+};
+const planet = new THREE.Mesh(new THREE.SphereGeometry(1,192,192), new THREE.ShaderMaterial({ vertexShader: planetVertex, fragmentShader: planetFragment, uniforms: planetUniforms }));
+scene.add(planet);
+
+// Clouds
+const cloudsUniforms = { uTime:{value:0}, uCloudScale:{value:4.0}, uCloudDensity:{value:params.cloudDensity}, uCloudSpeed:{value:params.cloudSpeed}, uSeed:{value:params.seed} };
+const clouds = new THREE.Mesh(new THREE.SphereGeometry(1.03,128,128), new THREE.ShaderMaterial({ vertexShader:cloudsVertex, fragmentShader:cloudsFragment, uniforms:cloudsUniforms, transparent:true, depthWrite:false }));
+scene.add(clouds);
+
+// Atmosphere
+const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.05,128,128), new THREE.ShaderMaterial({ vertexShader:atmoVertex, fragmentShader:atmoFragment, uniforms:{ uColor:{value:new THREE.Color('#6fb1ff')}, uIntensity:{value:0.7} }, side:THREE.BackSide, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
+scene.add(atmosphere);
+
+// Cities (instanced markers)
+let cityMesh = null; let perlin = new Perlin3(params.seed*1234567);
+function elevationAt(v){
+  const lac=params.lacunarity, gain=params.gain, oct=params.octaves; let sum=0, amp=0.5, freq=1; for(let i=0;i<oct;i++){ sum += amp * perlin.noise(v.x*params.noiseScale*freq+10, v.y*params.noiseScale*freq+20, v.z*params.noiseScale*freq+30); freq*=lac; amp*=gain; }
+  const ridges = Math.pow(1 - Math.abs(sum), 1.5); const height = sum*0.6 + ridges*0.4; return 1 + params.amplitude * height;
+}
+function regenerateCities(){
+  if(cityMesh){ scene.remove(cityMesh); cityMesh.geometry.dispose(); cityMesh.material.dispose(); cityMesh=null; }
+  if(params.cities<=0) return;
+  perlin = new Perlin3(params.seed*1234567);
+  const count = params.cities; const temp = new THREE.Matrix4(); const pos = new THREE.Vector3();
+  const mesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.008,8,8), new THREE.MeshBasicMaterial({ color:0xffd166 }), count);
+  let placed=0, attempts=0; const rng=mulberry32((params.seed|0)+42);
+  while(placed<count && attempts<count*50){ attempts++; const u=rng(); const v=rng(); const theta=2*Math.PI*u; const phi=Math.acos(2*v-1); pos.set(Math.sin(phi)*Math.cos(theta), Math.cos(phi), Math.sin(phi)*Math.sin(theta)); const elev=elevationAt(pos); if(elev>params.waterLevel+0.02){ const r=elev*1.0001; const p=pos.clone().multiplyScalar(r); temp.identity().setPosition(p.x,p.y,p.z); mesh.setMatrixAt(placed, temp); placed++; } }
+  mesh.instanceMatrix.needsUpdate = true; cityMesh = mesh; scene.add(cityMesh);
+}
+regenerateCities();
+
+// Resize
+addEventListener('resize', () => { camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); });
+
+// Panel bindings
+const byId = id => document.getElementById(id);
+const setTxt = (id, val) => byId(id).textContent = (typeof val==='number') ? (Number.isInteger(val)? val : val.toFixed(2)) : val;
+byId('toggle').onclick = () => { const body = byId('panel-body'); const btn = byId('toggle'); const visible = body.style.display !== 'none'; body.style.display = visible ? 'none':'block'; btn.textContent = visible ? 'Vis' : 'Skjul'; };
+
+function onRange(id, key, handler){ const el = byId(id); const valEl = byId(id+"Val"); const update = ()=>{ let v=el.value; const num = Number(v); params[key] = Number.isFinite(num)? num : v; setTxt(id+"Val", params[key]); handler && handler(params[key]); }; el.addEventListener('input', update); update(); }
+
+onRange('seed','seed', v=>{ planetUniforms.uSeed.value=v; cloudsUniforms.uSeed.value=v; regenerateCities(); });
+onRange('water','waterLevel', v=>{ planetUniforms.uWaterLevel.value=v; regenerateCities(); });
+onRange('amp','amplitude', v=>{ planetUniforms.uAmplitude.value=v; regenerateCities(); });
+onRange('scale','noiseScale', v=>{ planetUniforms.uNoiseScale.value=v; regenerateCities(); });
+onRange('lac','lacunarity', v=>{ planetUniforms.uLacunarity.value=v; regenerateCities(); });
+onRange('gain','gain', v=>{ planetUniforms.uGain.value=v; regenerateCities(); });
+onRange('oct','octaves', v=>{ planetUniforms.uOctaves.value=v|0; regenerateCities(); });
+onRange('cloudDen','cloudDensity', v=>{ cloudsUniforms.uCloudDensity.value=v; });
+onRange('cloudSpd','cloudSpeed', v=>{ cloudsUniforms.uCloudSpeed.value=v; });
+onRange('sunSpd','sunSpeed', v=>{});
+onRange('cities','cities', v=>{ regenerateCities(); });
+
+byId('showClouds').addEventListener('change', (e)=>{ params.showClouds = e.target.checked; clouds.visible = params.showClouds; });
+byId('showAtmo').addEventListener('change', (e)=>{ params.showAtmosphere = e.target.checked; atmosphere.visible = params.showAtmosphere; });
+
+// Animation loop
+const clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  // rotate sun & update light dir
+  const s = t * params.sunSpeed; const x=Math.cos(s)*6, y=Math.sin(s)*6; dirLight.position.set(x,y,0); dirLight.target?.position.set(0,0,0); sun.position.set(x,y,0);
+  planetUniforms.uLightDir.value.copy(dirLight.position).normalize();
+  planetUniforms.uTime.value = t; cloudsUniforms.uTime.value = t;
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
