@@ -1,0 +1,44 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        
+    </head>
+      <input id="navn" placeholder="Skriv navnet ditt">
+        <button id="hils"></button>
+        <p id="melding"></p>
+<body>
+
+         <h1 id="overskrift">Hei!</hi>
+        <p class="tekst">Dette er et avsnitt</p>
+        <P id="tekst">Trykk på meg!</p>
+       
+    
+<script>
+
+let overskrift = document.getElementById("overskrift")
+let tekst = document.querySelector(".tekst")
+
+
+
+overskrift.textContent = "Hei, Javascript!"
+tekst.style.color = "blue"
+tekst.style.fontSize= "20px"
+
+let nyParagraf = document.createElement("P")
+nyParagraf.textContent = "Dette ble laget med Javascript"
+document.body.appendChild(nyParagraf)
+
+console.log(overskrift.textContent)
+
+
+ 
+
+</script>
+
+
+
+    </body>
+    </html>
