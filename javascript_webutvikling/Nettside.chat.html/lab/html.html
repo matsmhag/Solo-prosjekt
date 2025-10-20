@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Min første nettside</title>
+  <meta name="description" content="En enkel, responsiv nettside som du kan bygge videre på." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text x='50' y='58' font-size='54' text-anchor='middle' fill='white'>H</text></svg>">
+  <style>
+    /* --- Enkel, moderne base-styling (mobile-first) --- */
+    :root {
+      --bg: #0f172a;       /* slate-900 */
+      --panel: #111827;    /* gray-900 */
+      --muted: #cbd5e1;    /* slate-300 */
+      --text: #e5e7eb;     /* gray-200 */
+      --accent: #38bdf8;   /* sky-400 */
+      --accent-2: #22d3ee; /* cyan-400 */
+      --ok: #34d399;       /* green-400 */
+      --warn: #fbbf24;     /* amber-400 */
+      --danger: #f87171;   /* red-400 */
+      --radius: 16px;
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+      --maxw: 1100px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text); background: radial-gradient(1200px 600px at 70% -10%, #1e293b, var(--bg));
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:focus, a:hover { text-decoration: underline; }
+    .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1rem; }
+
+    /* Skip-lenke for tastaturnavigasjon */
+    .skip-link {
+      position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;
+    }
+    .skip-link:focus {
+      position: fixed; left: 1rem; top: 1rem; width: auto; height: auto; padding: .6rem .8rem; background: #000; color: #fff; z-index: 1000; border-radius: .5rem;
+    }
+
+    header {
+      position: sticky; top: 0; backdrop-filter: blur(6px);
+      background: rgba(17,24,39,.6); border-bottom: 1px solid rgba(255,255,255,.06);
+      z-index: 50;
+    }
+    .nav {
+      display: flex; align-items: center; justify-content: space-between; padding: .8rem 0;
+    }
+    .brand { display: inline-flex; align-items: center; gap: .6rem; font-weight: 700; letter-spacing: .3px; }
+    .badge { display: inline-block; padding: .15rem .5rem; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; font-size: .75rem; color: var(--muted); }
+    .menu { display: flex; gap: 1rem; align-items: center; }
+    .menu a { padding: .4rem .6rem; border-radius: .5rem; color: var(--muted); }
+    .menu a[aria-current="page"], .menu a:hover { background: rgba(56,189,248,.1); color: var(--text); }
+    .menu-toggle { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background: transparent; color: var(--text); }
+    .menu-toggle:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* Mobil-meny */
+    .drawer { display: none; }
+    .drawer.open { display: block; padding: .6rem; }
+    .drawer a { display: block; padding: .6rem .8rem; border-radius: .6rem; color: var(--muted); }
+    .drawer a:hover { background: rgba(56,189,248,.1); color: var(--text); }
+
+    /* Hero */
+    .hero { padding: 5rem 0 3rem; }
+    .hero h1 { font-size: clamp(2rem, 4vw + 1rem, 3.6rem); line-height: 1.1; margin: 0 0 .8rem; }
+    .hero p { color: var(--muted); max-width: 60ch; margin: 0; }
+    .cta { display: inline-flex; gap: .6rem; margin-top: 1.2rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: .5rem; padding: .7rem 1rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(56,189,248,.2), rgba(34,211,238,.1)); color: white; cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .btn.secondary { background: rgba(255,255,255,.06); }
+
+    /* Kort / seksjoner */
+    .grid { display: grid; gap: 1rem; }
+    @media (min-width: 800px) { .grid.cols-3 { grid-template-columns: repeat(3, 1fr); } }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow);
+    }
+    .card h3 { margin-top: 0; }
+
+    section { padding: 3rem 0; }
+    section h2 { font-size: clamp(1.4rem, 3vw + .6rem, 2rem); margin: 0 0 .6rem; }
+    .muted { color: var(--muted); }
+
+    /* Kontakt */
+    form { display: grid; gap: .8rem; max-width: 560px; }
+    label { font-weight: 600; }
+    input, textarea {
+      width: 100%; padding: .7rem .8rem; border-radius: .7rem; border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.3); color: var(--text);
+    }
+    input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    footer { padding: 2rem 0 4rem; color: var(--muted); }
+    .small { font-size: .9rem; }
+
+    /* Demo-grafikk */
+    .illustration { aspect-ratio: 16/9; border-radius: var(--radius); border: 1px solid rgba(255,255,255,.08); overflow: hidden; }
+    .illustration svg { width: 100%; height: 100%; display: block; background: radial-gradient(500px 300px at 20% 20%, rgba(56,189,248,.25), transparent),
+                                                   radial-gradient(500px 300px at 80% 30%, rgba(34,211,238,.18), transparent),
+                                                   linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00)); }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#innhold">Hopp til hovedinnhold</a>
+
+  <header>
+    <nav class="wrap nav" aria-label="Hovedmeny">
+      <a class="brand" href="#" aria-current="page">
+        <span aria-hidden="true">🌐</span>
+        <span>MinNettside</span>
+        <span class="badge">v1</span>
+      </a>
+      <div class="menu" aria-label="Hurtiglenker">
+        <a href="#funksjoner">Funksjoner</a>
+        <a href="#prosjekt">Prosjekt</a>
+        <a href="#kontakt">Kontakt</a>
+        <button class="menu-toggle" aria-controls="mobilmeny" aria-expanded="false" title="Åpne meny" onclick="toggleMenu()">☰</button>
+      </div>
+    </nav>
+    <div id="mobilmeny" class="drawer wrap" hidden>
+      <a href="#funksjoner" onclick="closeMenu()">Funksjoner</a>
+      <a href="#prosjekt" onclick="closeMenu()">Prosjekt</a>
+      <a href="#kontakt" onclick="closeMenu()">Kontakt</a>
+    </div>
+  </header>
+
+  <main id="innhold" class="wrap">
+    <section class="hero" aria-labelledby="tittel">
+      <h1 id="tittel">Bygg din egen nettside med HTML, CSS og litt JS</h1>
+      <p class="muted">Denne mallen er et perfekt utgangspunkt. Den er responsiv, tilgjengelig og lett å tilpasse. Bla nedenfor for å lære struktur, stil og interaksjon.</p>
+      <div class="cta">
+        <a class="btn" href="#prosjekt">Start prosjektet</a>
+        <a class="btn secondary" href="#kontakt">Still et spørsmål</a>
+      </div>
+    </section>
+
+    <section id="funksjoner" aria-labelledby="funksjoner-tittel">
+      <h2 id="funksjoner-tittel">Hva inneholder denne mallen?</h2>
+      <p class="muted">Semantiske tagger, mobilmeny, kort-layout, skjema og en enkel illustrasjon uten eksterne bilder.</p>
+      <div class="grid cols-3" role="list">
+        <article class="card" role="listitem">
+          <h3>Semantisk HTML</h3>
+          <p>Bruk av <code>&lt;header&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;section&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;article&gt;</code> forbedrer SEO og tilgjengelighet.</p>
+        </article>
+        <article class="card" role="listitem">
+          <h3>Responsivt design</h3>
+          <p>Mobile‑first CSS med CSS‑grid og <code>clamp()</code> for typografi gir god lesbarhet på alle skjermer.</p>
+        </article>
+        <article class="card" role="listitem">
+          <h3>Tilgjengelighet</h3>
+          <p>Skip‑lenke, riktige <code>aria‑</code> attributter og tydelige fokusstiler for tastaturnavigasjon.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="prosjekt" aria-labelledby="prosjekt-tittel">
+      <h2 id="prosjekt-tittel">Ditt første prosjekt</h2>
+      <div class="grid" style="grid-template-columns: 1.2fr 1fr; align-items: start; gap: 1rem;">
+        <div class="card">
+          <h3>Oppgave: Bygg en enkel «portefølje»</h3>
+          <ol>
+            <li>Endre tittelen i <code>&lt;title&gt;</code> og i <code>&lt;h1&gt;</code> til ditt navn.</li>
+            <li>Bytt menylenker til seksjoner du ønsker (f.eks. «Om meg», «Prosjekter», «Kontakt»).</li>
+            <li>Legg til ett nytt kort i «Funksjoner» med noe du lærer i dag.</li>
+            <li>Tilpass fargene i <code>:root</code>.</li>
+            <li>Valgfritt: Lag en egen side «prosjekter.html» og lenk til den.</li>
+          </ol>
+          <p class="small muted">Tips: Lagre filen som <strong>index.html</strong> i en mappe. Åpne den i nettleseren ved å dobbeltklikke.</p>
+        </div>
+        <div class="illustration card" aria-hidden="true">
+          <!-- Enkel dekorativ SVG -->
+          <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dekorativ illustrasjon">
+            <defs>
+              <linearGradient id="g" x1="0" x2="1">
+                <stop offset="0" stop-color="rgba(56,189,248,.7)" />
+                <stop offset="1" stop-color="rgba(34,211,238,.5)" />
+              </linearGradient>
+            </defs>
+            <g fill="none" stroke="url(#g)" stroke-width="2">
+              <path d="M0 380 Q200 280 400 340 T800 320"/>
+              <path d="M0 300 Q200 220 400 260 T800 240"/>
+              <path d="M0 220 Q200 160 400 180 T800 160"/>
+            </g>
+            <g stroke="white" stroke-opacity=".3">
+              <rect x="60" y="60" width="200" height="140" rx="14"/>
+              <rect x="300" y="60" width="440" height="280" rx="14"/>
+              <circle cx="120" cy="300" r="40"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section id="kontakt" aria-labelledby="kontakt-tittel">
+      <h2 id="kontakt-tittel">Kontakt</h2>
+      <p class="muted">Skjemaet nedenfor sender ikke data noe sted ennå – det er bare for å vise HTML‑skjemaer. Senere kan vi koble på et backend‑skjema eller en e‑postløsning.</p>
+      <form onsubmit="event.preventDefault(); alert('Takk! Skjemaet er sendt (demo).');">
+        <label for="navn">Navn</label>
+        <input id="navn" name="navn" autocomplete="name" required placeholder="Fornavn Etternavn" />
+        <label for="epost">E‑post</label>
+        <input id="epost" name="epost" type="email" autocomplete="email" required placeholder="deg@eksempel.no" />
+        <label for="melding">Melding</label>
+        <textarea id="melding" name="melding" rows="5" placeholder="Skriv meldingen her..."></textarea>
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p class="small">© <span id="year"></span> Ditt navn. Bygget med ren HTML, CSS og litt JavaScript.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Oppdatér årstall i footer
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Enkel mobilmeny
+    const drawer = document.getElementById('mobilmeny');
+    const toggleBtn = document.querySelector('.menu-toggle');
+    function toggleMenu(){
+      const open = drawer.classList.toggle('open');
+      drawer.hidden = !open;
+      toggleBtn.setAttribute('aria-expanded', String(open));
+      toggleBtn.title = open ? 'Lukk meny' : 'Åpne meny';
+    }
+    function closeMenu(){ drawer.classList.remove('open'); drawer.hidden = true; toggleBtn.setAttribute('aria-expanded','false'); }
+
+    // Jevn rulling for interne lenker
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        const id = a.getAttribute('href').slice(1);
+        const el = document.getElementById(id);
+        if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); }
+      });
+    });
+  </script>
+</body>
+</html>
